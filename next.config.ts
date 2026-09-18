@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        
         hostname: "media.istockphoto.com", // tumhara R2 public URL
       },
 
