@@ -1,0 +1,20 @@
+ALTER TABLE "account" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "certificates" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "comment_likes" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "connections" ALTER COLUMN "requester_id" SET DATA TYPE text USING "requester_id"::text;--> statement-breakpoint
+ALTER TABLE "connections" ALTER COLUMN "addressee_id" SET DATA TYPE text USING "addressee_id"::text;--> statement-breakpoint
+ALTER TABLE "exam_submissions" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "followers" ALTER COLUMN "following_id" SET DATA TYPE text USING "following_id"::text;--> statement-breakpoint
+ALTER TABLE "followers" ALTER COLUMN "follower_id" SET DATA TYPE text USING "follower_id"::text;--> statement-breakpoint
+ALTER TABLE "internship_registrations" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "lors" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "notifications" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "notifications" ALTER COLUMN "actor_id" SET DATA TYPE text USING "actor_id"::text;--> statement-breakpoint
+ALTER TABLE "offer_letters" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "payments" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "post_comments" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "post_likes" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "posts" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "project_submissions" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;--> statement-breakpoint
+ALTER TABLE "project_submissions" ALTER COLUMN "reviewed_by" SET DATA TYPE text USING "reviewed_by"::text;--> statement-breakpoint
+ALTER TABLE "saved_posts" ALTER COLUMN "user_id" SET DATA TYPE text USING "user_id"::text;
