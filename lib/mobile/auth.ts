@@ -8,6 +8,7 @@ export async function getMobileSession() {
   return session;
 }
 
+
 export async function requireMobileAuth() {
   const session = await getMobileSession();
   if (!session?.user) {
