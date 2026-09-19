@@ -13,6 +13,7 @@ import {
   savedPosts,
   internships,
 } from "@/db/schema";
+import { headers } from "next/headers";
 import { auth } from "@/auth";
 import {
   and,
@@ -177,8 +178,16 @@ export type PostComment = {
 ========================================================= */
 
 async function getCurrentUserId(): Promise<string | null> {
-  const session = await auth();
-  return session?.user?.id ?? null;
+  try {
+    const headersList = await headers();
+    const session = await auth.api.getSession({
+      headers: headersList,
+    });
+    return session?.user?.id ?? null;
+  } catch (err) {
+    console.error("getCurrentUserId error:", err);
+    return null;
+  }
 }
 
 /* =========================================================
@@ -776,7 +785,9 @@ export async function getUploadUrl(
   key?: string;
   error?: string;
 }> {
-  const session = await auth();
+   const session = await auth.api.getSession({
+    headers: await headers(),
+  });
   const userId = session?.user?.id;
 
   if (!userId) return { success: false, error: "Not authenticated" };

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
 import {
   Home,
@@ -98,11 +98,14 @@ function getInitials(name?: string | null) {
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  /* ---------- better-auth session ---------- */
+  const { data: session, isPending } = authClient.useSession();
 
   const user = session?.user;
-  const isLoading = status === "loading";
-  const isAuthed = status === "authenticated";
+  const isLoading = isPending;
+  const isAuthed = !!session?.user;
 
   /* ---------- dynamic badges ---------- */
   const [networkBadge, setNetworkBadge] = useState(0);
@@ -118,13 +121,17 @@ export default function Navbar() {
     let cancelled = false;
 
     async function load() {
-      const [badges, notifCount] = await Promise.all([
-        getSidebarBadges(),
-        getUnreadNotificationCount(),
-      ]);
-      if (cancelled) return;
-      setNetworkBadge(badges.network);
-      setNotifBadge(notifCount);
+      try {
+        const [badges, notifCount] = await Promise.all([
+          getSidebarBadges(),
+          getUnreadNotificationCount(),
+        ]);
+        if (cancelled) return;
+        setNetworkBadge(badges.network);
+        setNotifBadge(notifCount);
+      } catch (err) {
+        console.error("badge load error", err);
+      }
     }
 
     load();
@@ -136,7 +143,6 @@ export default function Navbar() {
       cancelled = true;
       clearInterval(interval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthed, session?.user?.id, pathname]);
 
   /* ---------- badge value resolver ---------- */
@@ -146,6 +152,18 @@ export default function Navbar() {
     if (key === "notifications") return notifBadge;
     return 0;
   }
+
+  /* ---------- sign out (better-auth) ---------- */
+  const handleSignOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/");
+          router.refresh();
+        },
+      },
+    });
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -158,7 +176,11 @@ export default function Navbar() {
             className="flex shrink-0 items-center gap-1.5"
             aria-label="Home"
           >
-            <img src={'/internbird.png'} className="w-50" alt="INTERNBIRD LOGO" />
+            <img
+              src={"/internbird.png"}
+              className="w-50"
+              alt="INTERNBIRD LOGO"
+            />
           </Link>
 
           {/* Search */}
@@ -228,7 +250,7 @@ export default function Navbar() {
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : user ? (
             <DropdownMenu>
-              <DropdownMenuTrigger >
+              <DropdownMenuTrigger>
                 <button
                   className="flex items-center gap-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label="Account menu"
@@ -270,29 +292,29 @@ export default function Navbar() {
 
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem >
-                    <Link href="/profile" className="cursor-pointer">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Link href="/profile" className="flex items-center gap-2">
                       <User className="mr-2 h-4 w-4" />
                       View profile
                     </Link>
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem >
-                    <Link href="/dashboard" className="cursor-pointer">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Link href="/dashboard" className="flex items-center gap-2">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem >
-                    <Link href="/saved" className="cursor-pointer">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Link href="/saved" className="flex items-center gap-2">
                       <Bookmark className="mr-2 h-4 w-4" />
                       Saved posts
                     </Link>
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem >
-                    <Link href="/settings" className="cursor-pointer">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Link href="/settings" className="flex items-center gap-2">
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </Link>
@@ -301,7 +323,7 @@ export default function Navbar() {
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem
-                    onClick={() => signOut({ callbackUrl: "/" })}
+                    onClick={handleSignOut}
                     className="cursor-pointer text-destructive focus:text-destructive"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -312,10 +334,10 @@ export default function Navbar() {
             </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
-              <Button  variant="ghost" size="sm">
+              <Button variant="ghost" size="sm">
                 <Link href="/register">Join now</Link>
               </Button>
-              <Button  size="sm">
+              <Button size="sm">
                 <Link href="/login">Sign in</Link>
               </Button>
             </div>

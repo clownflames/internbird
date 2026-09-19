@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
 import {
   Home,
@@ -13,7 +13,6 @@ import {
   Award,
   BarChart3,
   Bookmark,
-  Building2,
   Compass,
   Plus,
   FolderKanban,
@@ -37,7 +36,7 @@ import {
 import Image from "next/image";
 
 /* =========================================================
-   NAV ITEMS (static — badges dynamic)
+   NAV ITEMS
 ========================================================= */
 
 const navItems = [
@@ -93,9 +92,7 @@ const navItems = [
   { label: "Saved", href: "/saved", icon: Bookmark, badgeKey: null },
 ];
 
-const discoverItems = [
-  { label: "Explore", href: "/explore", icon: Compass },
-];
+const discoverItems = [{ label: "Explore", href: "/explore", icon: Compass }];
 
 /* =========================================================
    HELPERS
@@ -122,8 +119,11 @@ function formatCount(n: number) {
 
 export default function LeftSidebar() {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
+
   const user = session?.user;
+  const isAuthed = !!session?.user;
+  const isAuthLoading = isPending;
 
   const [profile, setProfile] = useState<CurrentUserProfile | null>(null);
   const [badges, setBadges] = useState<SidebarBadges>({
@@ -138,33 +138,38 @@ export default function LeftSidebar() {
     let cancelled = false;
 
     async function load() {
-      // guest user → skip DB calls
-      if (status === "unauthenticated") {
-        setLoading(false);
+      // auth still loading — wait
+      if (isAuthLoading) return;
+
+      // guest
+      if (!isAuthed) {
         setProfile(null);
         setBadges({ network: 0, notifications: 0 });
+        setLoading(false);
         return;
       }
 
-      if (status !== "authenticated") return; // still loading auth
-
       setLoading(true);
-      const [p, b] = await Promise.all([
-        getCurrentUserProfile(),
-        getSidebarBadges(),
-      ]);
-
-      if (cancelled) return;
-      setProfile(p);
-      setBadges(b);
-      setLoading(false);
+      try {
+        const [p, b] = await Promise.all([
+          getCurrentUserProfile(),
+          getSidebarBadges(),
+        ]);
+        if (cancelled) return;
+        setProfile(p);
+        setBadges(b);
+      } catch (err) {
+        console.error("LeftSidebar load error", err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
 
     load();
     return () => {
       cancelled = true;
     };
-  }, [status, session?.user?.id]);
+  }, [isAuthed, isAuthLoading, session?.user?.id]);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -173,7 +178,6 @@ export default function LeftSidebar() {
 
   return (
     <div className="space-y-2">
-      {/* ================= PROFILE CARD ================= */}
       {/* ================= PROFILE CARD ================= */}
       <Card className="overflow-hidden py-0 gap-0">
         {/* cover */}
@@ -214,7 +218,7 @@ export default function LeftSidebar() {
               {profile?.name ?? user?.name ?? "Guest User"}
             </Link>
 
-            {loading && status === "authenticated" ? (
+            {loading && isAuthed ? (
               <Skeleton className="mx-auto mt-1 h-3 w-24" />
             ) : (
               <p className="truncate text-xs text-muted-foreground">
@@ -228,8 +232,41 @@ export default function LeftSidebar() {
 
           <Separator className="my-3" />
 
-          {/* stats — same as before */}
-          ...
+          {/* stats */}
+          {loading && isAuthed ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Internships</span>
+                <span className="font-medium">
+                  {formatCount(profile?.internshipsCount ?? 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Connections</span>
+                <span className="font-medium">
+                  {formatCount(profile?.connectionsCount ?? 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Followers</span>
+                <span className="font-medium">
+                  {formatCount(profile?.followersCount ?? 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Posts</span>
+                <span className="font-medium">
+                  {formatCount(profile?.postsCount ?? 0)}
+                </span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -313,10 +350,7 @@ export default function LeftSidebar() {
       </Card>
 
       {/* ================= CREATE POST DRAWER ================= */}
-      <CreatePostDrawer
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-      />
+      <CreatePostDrawer open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }

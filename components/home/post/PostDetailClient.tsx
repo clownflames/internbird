@@ -22,7 +22,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { useEffect, useRef } from "react";
 
 import { cn } from "@/lib/utils";
@@ -164,7 +164,7 @@ interface Props {
 
 export default function PostDetailClient({ post }: Props) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const currentUser = session?.user;
 
   const [liked, setLiked] = useState(post.isLikedByMe);

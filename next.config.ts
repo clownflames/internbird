@@ -10,7 +10,16 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "logolook.net", // tumhara R2 public URL
+      },
+      {
+        protocol: "https",
         hostname: "pub-33bc541e245348499ae45f9aea4a58ed.r2.dev", // tumhara R2 public URL
+      },
+      {
+        protocol: "https",
+        
+        hostname: "media.istockphoto.com", // tumhara R2 public URL
       },
 
       {

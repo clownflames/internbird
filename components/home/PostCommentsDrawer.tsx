@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition, useRef } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { Send, Loader2, Trash2, Reply, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";

@@ -167,9 +167,7 @@ export const offerLetterStatusEnum = pgEnum(
 export const users = pgTable(
   "users",
   {
-    id: uuid("id")
-      .defaultRandom()
-      .primaryKey(),
+    id: text("id").primaryKey(),
 
     name: varchar("name", {
       length: 150,
@@ -182,6 +180,11 @@ export const users = pgTable(
     phone: varchar("phone", {
       length: 20,
     }),
+
+    emailVerified: boolean("email_verified").notNull().default(false),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
 
     password: text("password"),
 
@@ -236,23 +239,58 @@ export const users = pgTable(
        TIMESTAMPS
     ===================================================== */
 
-    createdAt: timestamp("created_at", {
-      withTimezone: true,
-    })
-      .defaultNow()
-      .notNull(),
 
-    updatedAt: timestamp("updated_at", {
-      withTimezone: true,
-    })
-      .defaultNow()
-      .notNull(),
+
+
   },
 
   (table) => [
     index("users_email_idx").on(table.email),
   ]
 );
+
+
+
+// db/schema.ts me add karo
+export const sessions = pgTable("session", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")                    // 👈 uuid → text
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const accounts = pgTable("account", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")                    // 👈 uuid → text
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+export const verifications = pgTable("verification", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at"),
+  updatedAt: timestamp("updated_at"),
+});
+
 
 
 /* =========================================================
@@ -374,11 +412,9 @@ export const internshipRegistrations = pgTable(
       .defaultRandom()
       .primaryKey(),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
 
     internshipId: uuid("internship_id")
       .notNull()
@@ -666,11 +702,9 @@ export const examSubmissions = pgTable(
         onDelete: "cascade",
       }),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
 
     attemptNumber: integer("attempt_number")
       .default(1)
@@ -784,7 +818,7 @@ export const offerLetters = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
 
@@ -873,7 +907,7 @@ export const certificates = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
 
@@ -978,11 +1012,9 @@ export const lors = pgTable(
       .defaultRandom()
       .primaryKey(),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
 
     internshipId: uuid("internship_id")
       .notNull()
@@ -1146,11 +1178,9 @@ export const payments = pgTable(
       .defaultRandom()
       .primaryKey(),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
 
     registrationId: uuid("registration_id")
       .references(
@@ -1258,18 +1288,13 @@ export const followers = pgTable(
       .primaryKey(),
 
     // jisko follow kiya ja raha hai
-    followingId: uuid("following_id")
+    followingId: text("following_id")           // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
 
-    // jo follow kar raha hai
-    followerId: uuid("follower_id")
+    followerId: text("follower_id")             // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
 
     status: followStatusEnum("status")
       .default("active")
@@ -1307,18 +1332,16 @@ export const connections = pgTable(
       .primaryKey(),
 
     // request bhejne wala
-    requesterId: uuid("requester_id")
+    requesterId: text("requester_id")           // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    addresseeId: text("addressee_id")           // 👈 uuid → text
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
 
     // request receive karne wala
-    addresseeId: uuid("addressee_id")
-      .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+
 
     status: connectionStatusEnum("status")
       .default("pending")
@@ -1706,11 +1729,9 @@ export const posts = pgTable(
       .defaultRandom()
       .primaryKey(),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
 
     caption: text("caption"),
 
@@ -1791,10 +1812,9 @@ export const savedPosts = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-
     postId: uuid("post_id")
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
@@ -1827,11 +1847,9 @@ export const postLikes = pgTable(
         onDelete: "cascade",
       }),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
 
     createdAt: timestamp("created_at", {
       withTimezone: true,
@@ -1870,12 +1888,9 @@ export const postComments = pgTable(
         onDelete: "cascade",
       }),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
-
+      .references(() => users.id, { onDelete: "cascade" }),
     // reply support (self reference)
     parentId: uuid("parent_id")
       .references((): AnyPgColumn => postComments.id, {
@@ -2035,9 +2050,12 @@ export const projectSubmissions = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+
+    reviewedBy: text("reviewed_by")             // 👈 uuid → text
+      .references(() => users.id, { onDelete: "set null" }),
 
     registrationId: uuid("registration_id").references(
       () => internshipRegistrations.id,
@@ -2070,9 +2088,7 @@ export const projectSubmissions = pgTable(
 
     submissionNotes: text("submission_notes"),
 
-    reviewedBy: uuid("reviewed_by").references(() => users.id, {
-      onDelete: "set null",
-    }),
+
 
     score: integer("score"),
     feedback: text("feedback"),
@@ -2109,14 +2125,12 @@ export const notifications = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
 
     // jisko notification mil rahi hai
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
 
-    // kaun trigger kiya (system notifications me null)
-    actorId: uuid("actor_id").references(() => users.id, {
-      onDelete: "cascade",
-    }),
+    actorId: text("actor_id")                   // 👈 uuid → text
+      .references(() => users.id, { onDelete: "cascade" }),
 
     type: notificationTypeEnum("type").notNull(),
 
@@ -2192,11 +2206,9 @@ export const commentLikes = pgTable(
         onDelete: "cascade",
       }),
 
-    userId: uuid("user_id")
+    userId: text("user_id")                     // 👈 uuid → text
       .notNull()
-      .references(() => users.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => users.id, { onDelete: "cascade" }),
 
     createdAt: timestamp("created_at", {
       withTimezone: true,
