@@ -7,7 +7,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
    R2 CLIENT
 ========================================================= */
 
-const R2 = new S3Client({
+export const R2 = new S3Client({
   region: "auto", // R2 ke liye required, but ignored
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {

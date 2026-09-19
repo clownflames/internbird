@@ -1,0 +1,27 @@
+import { auth } from "@/auth";
+import { headers } from "next/headers";
+import { db } from "@/db";
+import { postComments } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+import { successResponse, errorResponse, handleApiError, unauthorizedResponse, notFoundResponse } from "@/lib/mobile";
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user) return unauthorizedResponse();
+
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split("/");
+    const commentId = pathParts[pathParts.length - 3];
+
+    const comment = await db.select().from(postComments).where(eq(postComments.id, commentId)).limit(1);
+    if (!comment[0]) return notFoundResponse("Comment not found");
+    if (comment[0].userId !== session.user.id) return errorResponse("Not authorized", 403);
+
+    await db.update(postComments).set({ isDeleted: true }).where(eq(postComments.id, commentId));
+
+    return successResponse({ deleted: true });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
