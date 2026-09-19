@@ -9,7 +9,7 @@ import {
   internshipRegistrations,
   internships,
 } from "@/db/schema";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { generateFileKey, getPresignedUploadUrl } from "@/lib/r2";
@@ -78,7 +78,7 @@ export type ProjectFilters = {
 ========================================================= */
 
 async function getCurrentUserId(): Promise<string | null> {
-  const session = await auth();
+  const session = await getSession();
   return session?.user?.id ?? null;
 }
 
@@ -630,7 +630,7 @@ export async function getProjectUploadUrl(
   key?: string;
   error?: string;
 }> {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
   if (!userId) return { success: false, error: "Not authenticated" };
 

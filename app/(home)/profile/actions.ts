@@ -11,7 +11,7 @@ import {
   postLikes,
   savedPosts,
 } from "@/db/schema";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import {
   and,
   eq,
@@ -96,7 +96,7 @@ export type ProfileRelation =
 ========================================================= */
 
 export async function getProfileData(userId?: string) {
-  const session = await auth();
+  const session = await getSession();
   const currentUserId = session?.user?.id ?? null;
   const targetUserId = userId ?? currentUserId;
 
@@ -346,7 +346,7 @@ export type UpdateProfileInput = {
 export async function updateProfile(
   input: UpdateProfileInput
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
 
   if (!userId) return { success: false, error: "Not authenticated" };
@@ -380,7 +380,7 @@ export async function updateProfileImage(
   kind: "avatar" | "cover",
   imageUrl: string
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
 
   if (!userId) return { success: false, error: "Not authenticated" };
@@ -421,7 +421,7 @@ export async function getUploadUrl(
   key?: string;
   error?: string;
 }> {
-  const session = await auth();
+  const session = await getSession();
   const userId = session?.user?.id;
 
   if (!userId) return { success: false, error: "Not authenticated" };

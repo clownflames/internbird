@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { internshipRegistrations, internships } from "@/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 
 /* =========================================================
    GET MY REGISTRATIONS
@@ -18,7 +18,7 @@ export async function getMyRegistrations({
   page?: number;
   limit?: number;
 } = {}) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) {
     return { success: false, error: "Unauthorized", data: [], total: 0, totalPages: 1 };
   }
@@ -109,7 +109,7 @@ export async function getMyRegistrations({
 ========================================================= */
 
 export async function getMyRegistrationDetail(id: string) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return { success: false, error: "Unauthorized" };
 
   const userId = (session.user as { id?: string }).id;

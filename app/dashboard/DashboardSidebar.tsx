@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 import {
   LayoutDashboard,
@@ -111,6 +112,19 @@ function isActivePath(pathname: string, url: string) {
 
 export function DashboardSidebar({ user }: { user: SessionUser }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  /* ---------- sign out (better-auth) ---------- */
+  const handleSignOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/login");
+          router.refresh();
+        },
+      },
+    });
+  };
 
   const documentsActive = documentsNav.some((item) =>
     isActivePath(pathname, item.url)
@@ -269,7 +283,7 @@ export function DashboardSidebar({ user }: { user: SessionUser }) {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem
-                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  onClick={handleSignOut}
                   className="text-red-600 focus:text-red-600"
                 >
                   <LogOut className="mr-2 h-4 w-4" />

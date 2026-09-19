@@ -9,7 +9,7 @@ import {
   internships,
 } from "@/db/schema";
 import { eq, desc, and, inArray, asc } from "drizzle-orm";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 
 /* =========================================================
    TYPES
@@ -54,7 +54,7 @@ export type ResultDetail = ResultListItem & {
 ========================================================= */
 
 export async function getMyResults() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user)
     return { success: false, error: "Unauthorized", data: [] as ResultListItem[] };
 
@@ -99,7 +99,7 @@ export async function getMyResults() {
 ========================================================= */
 
 export async function getMyResultDetail(submissionId: string) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return { success: false, error: "Unauthorized" };
 
   const userId = (session.user as { id?: string }).id;

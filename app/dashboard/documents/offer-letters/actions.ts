@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { offerLetters, internships } from "@/db/schema";
 import { eq, desc, and, ne } from "drizzle-orm";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 
 /* =========================================================
    TYPES
@@ -37,7 +37,7 @@ export type MyOfferLetter = {
 ========================================================= */
 
 export async function getMyOfferLetters() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user)
     return {
       success: false,
@@ -94,7 +94,7 @@ export async function getMyOfferLetters() {
 ========================================================= */
 
 export async function getMyOfferLetterDetail(id: string) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return { success: false, error: "Unauthorized" };
 
   const userId = (session.user as { id?: string }).id;

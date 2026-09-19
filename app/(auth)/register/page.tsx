@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 
 import { registerUser, oauthSignIn } from "../actions";
+import { authClient } from "@/lib/auth-client";
 
 /* ---------- Google Icon ---------- */
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -68,34 +69,54 @@ export default function RegisterPage() {
     password: "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /* ---------- Email / Password register ---------- */
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!form.name.trim()) return toast.error("Name is required");
-    if (!form.email.trim()) return toast.error("Email is required");
-    if (form.password.length < 6)
-      return toast.error("Password must be at least 6 characters");
+  if (!form.name.trim()) return toast.error("Name is required");
+  if (!form.email.trim()) return toast.error("Email is required");
+  if (form.password.length < 6)
+    return toast.error("Password must be at least 6 characters");
 
-    setLoading(true);
-    try {
-      const res = await registerUser(form);
-      if (res.success) {
-        toast.success("Account created! Please sign in.");
-        router.push("/login");
-      } else {
-        toast.error(res.error ?? "Registration failed");
-      }
-    } catch {
-      toast.error("Unexpected error");
-    } finally {
+  setLoading(true);
+  try {
+    const { data, error } = await authClient.signUp.email({
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+      // custom fields (agar better-auth config me additionalFields me define kiye ho)
+      // phone: form.phone || undefined,
+      callbackURL: "/dashboard", // 👈 register ke baad redirect
+    });
+
+    if (error) {
+      toast.error(error.message ?? "Registration failed");
       setLoading(false);
+      return;
     }
-  };
 
+    toast.success("Account created!");
+    router.push("/dashboard");
+    router.refresh();
+  } catch (err) {
+    console.error(err);
+    toast.error("Unexpected error");
+    setLoading(false);
+  }
+};
+
+
+  /* ---------- OAuth ---------- */
   const handleOAuth = async (provider: "google" | "github") => {
     setOauthLoading(provider);
     try {
-      await oauthSignIn(provider);
+      const res = await oauthSignIn(provider);
+      if (res.success && res.url) {
+        window.location.href = res.url; // 🔑 provider URL pe redirect
+      } else {
+        setOauthLoading(null);
+        toast.error(res.error ?? `${provider} sign in failed`);
+      }
     } catch {
       setOauthLoading(null);
       toast.error(`${provider} sign in failed`);

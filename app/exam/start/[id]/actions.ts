@@ -9,7 +9,7 @@ import {
   internshipRegistrations,
 } from "@/db/schema";
 import { eq, and, asc, desc, sql } from "drizzle-orm";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 
 /* =========================================================
    TYPES
@@ -47,7 +47,7 @@ export type ExamAttemptData = {
 ========================================================= */
 
 export async function startExam(examId: string) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return { success: false, error: "Unauthorized" };
 
   const userId = (session.user as { id?: string }).id;
@@ -151,7 +151,7 @@ export async function startExam(examId: string) {
 ========================================================= */
 
 export async function getExamAttempt(submissionId: string) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return { success: false, error: "Unauthorized" };
 
   const userId = (session.user as { id?: string }).id;
@@ -235,7 +235,7 @@ export async function submitExamAttempt(
   answers: SubmitAnswer[],
   timeTaken: number
 ) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return { success: false, error: "Unauthorized" };
 
   const userId = (session.user as { id?: string }).id;

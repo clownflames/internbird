@@ -6,7 +6,7 @@ import {
   internshipRegistrations,
   payments,
 } from "@/db/schema";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import {
   and,
   or,
@@ -84,7 +84,7 @@ export type ApplicationFormData = {
 ========================================================= */
 
 async function getCurrentUserId(): Promise<string | null> {
-  const session = await auth();
+  const session = await getSession();
   return session?.user?.id ?? null;
 }
 

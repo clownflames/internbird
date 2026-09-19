@@ -8,7 +8,7 @@ import {
   internshipRegistrations,
 } from "@/db/schema";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 
 /* =========================================================
    TYPES
@@ -46,7 +46,7 @@ export type UserExamItem = {
 ========================================================= */
 
 export async function getMyExams() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return { success: false, error: "Unauthorized", data: [] };
 
   const userId = (session.user as { id?: string }).id;

@@ -53,7 +53,8 @@ export type NetworkData = {
 ========================================================= */
 
 async function getCurrentUserId(): Promise<string | null> {
-  const session = await auth();
+  const { headers } = await import("next/headers");
+  const session = await auth.api.getSession({ headers: await headers() });
   return session?.user?.id ?? null;
 }
 

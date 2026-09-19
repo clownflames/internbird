@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { certificates, internships } from "@/db/schema";
 import { eq, desc, and, ne } from "drizzle-orm";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 
 /* =========================================================
    TYPES
@@ -40,7 +40,7 @@ export type MyCertificate = {
 ========================================================= */
 
 export async function getMyCertificates() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user)
     return {
       success: false,
@@ -100,7 +100,7 @@ export async function getMyCertificates() {
 ========================================================= */
 
 export async function getMyCertificateDetail(id: string) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return { success: false, error: "Unauthorized" };
 
   const userId = (session.user as { id?: string }).id;

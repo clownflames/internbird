@@ -5,7 +5,7 @@ import {
   internships,
   internshipRegistrations,
 } from "@/db/schema";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import { and, eq, sql } from "drizzle-orm";
 
 /* =========================================================
@@ -41,7 +41,7 @@ export type InternshipDetail = {
 ========================================================= */
 
 async function getCurrentUserId(): Promise<string | null> {
-  const session = await auth();
+  const session = await getSession();
   return session?.user?.id ?? null;
 }
 

@@ -7,7 +7,7 @@ import {
   users,
   postLikes,
 } from "@/db/schema";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import { and, eq, desc, inArray } from "drizzle-orm";
 
 /* =========================================================
@@ -58,7 +58,7 @@ export async function getSavedPosts(
   limit = 20,
   offset = 0
 ): Promise<{ items: SavedPostItem[]; hasMore: boolean }> {
-  const session = await auth();
+  const session = await getSession();
   const currentUserId = session?.user?.id ?? null;
 
   if (!currentUserId) {

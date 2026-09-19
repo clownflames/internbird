@@ -1,12 +1,12 @@
 "use server";
 
+import { headers } from "next/headers";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { AuthError } from "next-auth";
-import { signIn } from "@/auth";
+import { auth } from "@/auth"; // better-auth server instance
+import { APIError } from "better-auth/api";
 
 /* =========================================================
    VALIDATION
@@ -41,9 +41,9 @@ export async function registerUser(input: {
 }) {
   try {
     const parsed = registerSchema.parse(input);
-
     const email = parsed.email.toLowerCase();
 
+    // Quick pre-check for nicer error message
     const [existing] = await db
       .select({ id: users.id })
       .from(users)
@@ -54,21 +54,42 @@ export async function registerUser(input: {
       return { success: false, error: "Email already registered" };
     }
 
-    const hashed = await bcrypt.hash(parsed.password, 10);
-
-    const [created] = await db
-      .insert(users)
-      .values({
+    // better-auth handles: password hashing + accounts table entry + user insert
+    const res = await auth.api.signUpEmail({
+      body: {
         name: parsed.name,
         email,
-        phone: parsed.phone || null,
-        password: hashed,
-      })
-      .returning();
+        password: parsed.password,
+        // extra fields are passed through if your auth config allows them
+        phone: parsed.phone || undefined,
+      } as any,
+      headers: await headers(),
+    });
 
-    return { success: true, userId: created.id };
+    console.log(res)
+
+    if (!res?.user?.id) {
+      return { success: false, error: "Failed to register user" };
+    }
+
+    // Optional: store phone separately if better-auth's schema doesn't include it
+    if (parsed.phone) {
+      await db
+        .update(users)
+        .set({ phone: parsed.phone })
+        .where(eq(users.id, res.user.id));
+    }
+
+    return { success: true, userId: res.user.id };
   } catch (error) {
     console.error("registerUser error:", error);
+
+    if (error instanceof APIError) {
+      return {
+        success: false,
+        error: error.body?.message ?? "Registration failed",
+      };
+    }
     if (error instanceof z.ZodError) {
       return {
         success: false,
@@ -87,30 +108,57 @@ export async function loginUser(input: { email: string; password: string }) {
   try {
     const parsed = loginSchema.parse(input);
 
-    await signIn("credentials", {
-      email: parsed.email.toLowerCase(),
-      password: parsed.password,
-      redirect: false,
+    await auth.api.signInEmail({
+      body: {
+        email: parsed.email.toLowerCase(),
+        password: parsed.password,
+      },
+      headers: await headers(),
     });
 
     return { success: true };
   } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case "CredentialsSignin":
-          return { success: false, error: "Invalid email or password" };
-        default:
-          return { success: false, error: "Something went wrong" };
+    console.error("loginUser error:", error);
+
+    if (error instanceof APIError) {
+      if (
+        error.status === "UNAUTHORIZED" ||
+        error.body?.code === "INVALID_EMAIL_OR_PASSWORD"
+      ) {
+        return { success: false, error: "Invalid email or password" };
       }
+      return {
+        success: false,
+        error: error.body?.message ?? "Something went wrong",
+      };
     }
-    // NextAuth v5 throws a special error for redirects — rethrow
-    throw error;
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: error.issues[0]?.message ?? "Validation failed",
+      };
+    }
+    return { success: false, error: "Something went wrong" };
   }
 }
 
 /* =========================================================
    OAUTH SIGN IN
 ========================================================= */
+
 export async function oauthSignIn(provider: "google" | "github") {
-  await signIn(provider, { redirectTo: "/dashboard" }); // <- yeh change
+  try {
+    const res = await auth.api.signInSocial({
+      body: {
+        provider,
+        callbackURL: "/dashboard",
+      },
+      headers: await headers(),
+    });
+
+    return { success: true, url: res?.url ?? null };
+  } catch (error) {
+    console.error("oauthSignIn error:", error);
+    return { success: false, error: "OAuth sign in failed" };
+  }
 }

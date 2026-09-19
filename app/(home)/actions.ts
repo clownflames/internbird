@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { db } from "@/db";
 import {
   posts,
@@ -9,7 +10,7 @@ import {
   followers,
   savedPosts,
 } from "@/db/schema";
-import { auth } from "@/auth";
+import { auth } from "@/auth"; // better-auth server instance
 import {
   and,
   eq,
@@ -67,12 +68,11 @@ export type FeedInternship = {
   mode: "remote" | "onsite" | "hybrid";
   location: string | null;
 
-  // pricing
   pricing: "free" | "paid";
   price: string | null;
   discountPrice: string | null;
   currency: string;
-  paymentType: "one_time" | "monthly" | null;  // ✅ allow null
+  paymentType: "one_time" | "monthly" | null;
   pricingNote: string | null;
 
   registrationOpen: boolean;
@@ -85,7 +85,8 @@ export type FeedItem = FeedPost | FeedInternship;
 ========================================================= */
 
 async function getCurrentUserId(): Promise<string | null> {
-  const session = await auth();
+  const { headers } = await import("next/headers");
+  const session = await auth.api.getSession({ headers: await headers() });
   return session?.user?.id ?? null;
 }
 
@@ -180,7 +181,7 @@ export async function getHomeFeed(
     savedPostIds = new Set(savedRows.map((r) => r.postId));
   }
 
-  /* ---------- 4. Fetch internships (with pricing) ---------- */
+  /* ---------- 4. Fetch internships ---------- */
   const internshipRows = await db
     .select({
       id: internships.id,
@@ -193,7 +194,6 @@ export async function getHomeFeed(
       mode: internships.mode,
       location: internships.location,
 
-      // pricing
       pricing: internships.pricing,
       price: internships.price,
       discountPrice: internships.discountPrice,
@@ -215,7 +215,7 @@ export async function getHomeFeed(
     .limit(limit + 1)
     .offset(offset);
 
-  /* ---------- 5. Determine hasMore ---------- */
+  /* ---------- 5. hasMore ---------- */
   const hasMorePosts = postRows.length > limit;
   const hasMoreInternships = internshipRows.length > limit;
   const hasMore = hasMorePosts || hasMoreInternships;
@@ -223,7 +223,7 @@ export async function getHomeFeed(
   const trimmedPosts = postRows.slice(0, limit);
   const trimmedInternships = internshipRows.slice(0, limit);
 
-  /* ---------- 6. Shape feed posts ---------- */
+  /* ---------- 6. Shape posts ---------- */
   const feedPosts: FeedPost[] = trimmedPosts.map((p) => ({
     kind: "post",
     id: p.id,
@@ -262,7 +262,6 @@ export async function getHomeFeed(
     mode: i.mode,
     location: i.location,
 
-    // pricing
     pricing: i.pricing,
     price: i.price,
     discountPrice: i.discountPrice,

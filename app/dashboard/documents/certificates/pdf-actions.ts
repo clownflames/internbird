@@ -8,7 +8,7 @@ import {
   internshipRegistrations,
 } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import type { InternshipCertificateData } from "@/docs/InternshipCertificatePDF";
 
 /* =========================================================
@@ -21,7 +21,7 @@ export async function getCertificatePDFData(
   | { success: true; data: InternshipCertificateData }
   | { success: false; error: string }
 > {
-  const session = await auth();
+  const session = await getSession();
 
   if (!session?.user) {
     return { success: false, error: "Unauthorized" };

@@ -8,7 +8,7 @@ import {
   savedPosts,
   followers,
 } from "@/db/schema";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import { and, eq, desc } from "drizzle-orm";
 import type { FeedPost } from "@/app/(home)/actions";
 
@@ -19,7 +19,7 @@ import type { FeedPost } from "@/app/(home)/actions";
 export async function getPostById(
   postId: string
 ): Promise<FeedPost | null> {
-  const session = await auth();
+  const session = await getSession();
   const currentUserId = session?.user?.id ?? null;
 
   const [row] = await db

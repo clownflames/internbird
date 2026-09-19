@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { notifications, users } from "@/db/schema";
-import { auth } from "@/auth";
+import { getSession } from "@/auth";
 import { and, eq, desc, sql, isNull, or } from "drizzle-orm";
 
 /* =========================================================
@@ -50,7 +50,7 @@ export type NotificationGroup = {
 ========================================================= */
 
 async function getCurrentUserId(): Promise<string | null> {
-  const session = await auth();
+  const session = await getSession();
   return session?.user?.id ?? null;
 }
 
