@@ -1,13 +1,9 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
 import { bearer } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { users, sessions, accounts, verifications } from "@/db/schema";
-
-
 import * as schema from "@/db/schema";
 
 export const auth = betterAuth({
@@ -20,13 +16,15 @@ export const auth = betterAuth({
       verification: schema.verifications,
     },
   }),
-  Plugin:[
-    bearer(),
-  ],
+
+  // ✅ lowercase 'plugins', array of plugins
+  plugins: [bearer()],
+
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
   },
+
   socialProviders: {
     google: {
       clientId: process.env.AUTH_GOOGLE_ID!,
@@ -39,10 +37,7 @@ export const auth = betterAuth({
   },
 });
 
-/* ===== helper: purane `auth()` calls ki jagah use karo =====
-   import { getSession } from "@/auth";
-   const session = await getSession();
-*/
+/* helper for server components / route handlers */
 export async function getSession() {
   const { headers } = await import("next/headers");
   return auth.api.getSession({ headers: await headers() });
